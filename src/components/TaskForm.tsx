@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { ITask } from '../types/task';
+import Spinner from './Spinner';
 
 interface TaskFormProps {
   initialData?: ITask;
@@ -14,6 +16,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Omit<ITask, '_id'>>({
     title: initialData?.title || '',
     date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -24,7 +27,16 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(formData);
+      toast.success(initialData ? 'Task updated successfully' : 'Task created successfully');
+    } catch (error) {
+      toast.error(initialData ? 'Failed to update task' : 'Failed to create task');
+      console.error('Error submitting task:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -109,9 +121,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         </button>
         <button
           type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center space-x-2 min-w-[100px] justify-center"
         >
-          Submit
+          {isSubmitting ? (
+            <>
+              <div className="w-4 h-4"><Spinner /></div>
+              <span>Saving...</span>
+            </>
+          ) : (
+            <span>Submit</span>
+          )}
         </button>
       </div>
     </form>

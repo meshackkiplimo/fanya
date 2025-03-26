@@ -1,6 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { ITask } from '../types/task';
+import Spinner from './Spinner';
 
 interface TaskCardProps {
   task: ITask;
@@ -9,6 +12,35 @@ interface TaskCardProps {
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleEdit = async () => {
+    setIsEditing(true);
+    try {
+      await onEdit(task);
+    } catch (error) {
+      toast.error('Failed to edit task');
+      console.error('Error editing task:', error);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    
+    setIsDeleting(true);
+    try {
+      await onDelete(task._id!);
+      toast.success('Task deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete task');
+      console.error('Error deleting task:', error);
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-6 space-y-4">
       <div className="flex justify-between items-start">
@@ -18,16 +50,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={() => onEdit(task)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            onClick={handleEdit}
+            disabled={isEditing || isDeleting}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:text-blue-400 flex items-center space-x-1 min-w-[60px]"
           >
-            Edit
+            {isEditing ? (
+              <>
+                <div className="w-4 h-4"><Spinner /></div>
+                <span>Editing...</span>
+              </>
+            ) : (
+              <span>Edit</span>
+            )}
           </button>
           <button
-            onClick={() => onDelete(task._id!)}
-            className="text-red-600 hover:text-red-800 text-sm font-medium"
+            onClick={handleDelete}
+            disabled={isEditing || isDeleting}
+            className="text-red-600 hover:text-red-800 text-sm font-medium disabled:text-red-400 flex items-center space-x-1 min-w-[60px]"
           >
-            Delete
+            {isDeleting ? (
+              <>
+                <div className="w-4 h-4"><Spinner /></div>
+                <span>Deleting...</span>
+              </>
+            ) : (
+              <span>Delete</span>
+            )}
           </button>
         </div>
       </div>
